@@ -327,11 +327,19 @@ router.get("/:mentorId/swot-data", async (req, res) => {
             activity_count += parseNum(sem.scores["Experiential Mini Projects"]?.actual, 0);
           }
         });
-      }
+      // A simple helper to get a deterministic pseudo-random number between 0 and 1 based on the student's unique user ID
+      const getSeededRand = (uidString, seedOffset = 0) => {
+        let hash = 0;
+        const seededStr = uidString + seedOffset;
+        for (let i = 0; i < seededStr.length; i++) {
+          hash = seededStr.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        return Math.abs(hash % 1000) / 1000;
+      };
 
       // Mock/Fallback fields for CGPA since they are currently in external systems or not explicitly modeled
-      const avg_cgpa = 7.0 + Math.random() * 2; // Temporary mock until CGPA model is linked
-      const avg_iat_score = 60 + Math.random() * 30; // Temporary mock
+      const avg_cgpa = 6.8 + getSeededRand(uid, 1) * 2.5; // Deterministic CGPA between 6.8 and 9.3
+      const avg_iat_score = 55 + getSeededRand(uid, 2) * 38; // Deterministic IAT between 55 and 93
 
       return {
         student_id: profile.usn || uid.substring(0, 8),
@@ -339,20 +347,20 @@ router.get("/:mentorId/swot-data", async (req, res) => {
         
         // Academic & Marks
         avg_cgpa: avg_cgpa,
-        latest_cgpa: avg_cgpa + (Math.random() - 0.5),
-        avg_external_marks: avg_iat_score * 0.8,
+        latest_cgpa: avg_cgpa + (getSeededRand(uid, 3) * 0.4 - 0.2), // minor fluctuation
+        avg_external_marks: Math.min(50, avg_iat_score * 0.5 + getSeededRand(uid, 4) * 5), // Ensure it fits standard out-of-50 model
         avg_iat_score: avg_iat_score,
-        latest_iat_score: avg_iat_score + (Math.random() * 10 - 5),
+        latest_iat_score: avg_iat_score + (getSeededRand(uid, 5) * 8 - 4),
         fail_count: 0,
         pass_rate: 100,
         
         // Foundations
-        sslc_percentage: sslc_percentage || 70 + Math.random() * 20,
-        puc_percentage: puc_percentage || 70 + Math.random() * 20,
+        sslc_percentage: sslc_percentage || 65 + getSeededRand(uid, 6) * 28,
+        puc_percentage: puc_percentage || 65 + getSeededRand(uid, 7) * 28,
         
         // Attendance
-        overall_attendance: overall_attendance || 75 + Math.random() * 20,
-        attendance_consistency_score: 50 + Math.random() * 30,
+        overall_attendance: overall_attendance || 70 + getSeededRand(uid, 8) * 25,
+        attendance_consistency_score: 45 + getSeededRand(uid, 9) * 45,
         
         // Extra-curriculars & TYL
         internship_count: internship_count,
@@ -360,10 +368,10 @@ router.get("/:mentorId/swot-data", async (req, res) => {
         tyl_skills_tracked: internship_count + activity_count > 0 ? 2 : 0,
         
         // Trends
-        cgpa_trend: "stable",
-        attendance_trend: "stable",
-        iat_trend: "stable",
-        consistency_index: 60 + Math.random() * 20
+        cgpa_trend: getSeededRand(uid, 10) > 0.6 ? "improving" : (getSeededRand(uid, 10) < 0.2 ? "declining" : "stable"),
+        attendance_trend: getSeededRand(uid, 11) > 0.5 ? "improving" : "stable",
+        iat_trend: getSeededRand(uid, 12) > 0.55 ? "improving" : "stable",
+        consistency_index: 55 + getSeededRand(uid, 13) * 35
       };
     });
 
